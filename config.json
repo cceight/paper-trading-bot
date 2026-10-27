@@ -1,0 +1,16 @@
+{
+  "symbols": ["SPY", "QQQ", "NVDA", "MSFT", "AMZN", "GOOGL"],
+  "interval_minutes": 5,
+  "starting_cash_usd": 10000,
+  "strategy": {
+    "name": "sma_cross",
+    "fast": 12,
+    "slow": 48
+  },
+  "costs": {
+    "commission_per_share": 0.005,
+    "commission_min": 1.0,
+    "slippage_bps": 5
+  },
+  "cash_buffer": 0.02
+}
