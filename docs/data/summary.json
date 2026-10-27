@@ -1,0 +1,26 @@
+{
+ "updated_at": "2026-10-27T11:19:32Z",
+ "started_at": "2026-10-26T19:55:00Z",
+ "last_bar": "2026-10-26T19:55:00Z",
+ "starting_cash": 10000.0,
+ "equity": 10000.0,
+ "cash": 10000.0,
+ "return_pct": 0.0,
+ "trade_count": 0,
+ "fees_paid": 0,
+ "positions": [],
+ "pending": [],
+ "symbols": [
+  "SPY",
+  "QQQ",
+  "NVDA",
+  "MSFT",
+  "AMZN",
+  "GOOGL"
+ ],
+ "strategy": {
+  "name": "sma_cross",
+  "fast": 12,
+  "slow": 48
+ }
+}
