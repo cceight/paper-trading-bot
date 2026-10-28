@@ -44,7 +44,8 @@ class PaperBroker:
         fee = self.fee(qty)
         self.cash -= qty * price + fee
         self.positions[symbol] = self.positions.get(symbol, 0) + qty
-        return {"side": "BUY", "symbol": symbol, "qty": qty, "price": round(price, 4), "fee": fee}
+        return {"side": "BUY", "symbol": symbol, "qty": qty, "price": round(price, 4), "fee": fee,
+                "slip": qty * (price - ref)}
 
     def sell(self, symbol: str, qty: int, ref: float) -> dict | None:
         qty = min(qty, self.positions.get(symbol, 0))
@@ -58,7 +59,8 @@ class PaperBroker:
             self.positions[symbol] = left
         else:
             self.positions.pop(symbol, None)
-        return {"side": "SELL", "symbol": symbol, "qty": qty, "price": round(price, 4), "fee": fee}
+        return {"side": "SELL", "symbol": symbol, "qty": qty, "price": round(price, 4), "fee": fee,
+                "slip": qty * (ref - price)}
 
     def position(self, symbol: str) -> int:
         return self.positions.get(symbol, 0)

@@ -4,6 +4,10 @@
 - 判断は「その足の終値が確定した時点」で行い、約定は「次の足の始値」。
 - 処理済みの時刻(last_ts)を保存しているので、ボットの起動がいくら遅れても、
   まとめて処理しても分割して処理しても、結果は同じになる。
+
+成績の比較用に、毎足あわせて記録するもの:
+- gross : 手数料と価格ズレを払わなかった場合の資産(実際の資産 + これまで払ったコスト)
+- bench : 運用開始時に全額をベンチマーク(SPY)で買って放置した場合の資産
 """
 from __future__ import annotations
 
@@ -21,7 +25,27 @@ def new_state(cash: float) -> dict:
         "last_close": {},
         "last_ts": None,
         "started_at": None,
+        "costs_paid": 0.0,
+        "bench_base": None,
+        "bench_last": None,
     }
+
+
+def initialize(state: dict, bars: dict[str, pd.DataFrame], bench: pd.DataFrame | None,
+               start: pd.Timestamp) -> dict:
+    """start 時点から運用を始める。過去データでは売買しない。"""
+    state["last_ts"] = _iso(start)
+    state["started_at"] = state["last_ts"]
+    for s, df in bars.items():
+        upto = df[df.index <= start]
+        if not upto.empty:
+            state["last_close"][s] = float(upto["close"].iloc[-1])
+    if bench is not None:
+        upto = bench[bench.index <= start]
+        if not upto.empty:
+            state["bench_base"] = state["bench_last"] = float(upto["close"].iloc[-1])
+    cash = state["cash"]
+    return {"ts": state["last_ts"], "equity": cash, "cash": cash, "gross": cash, "bench": cash}
 
 
 def processing_cutoff(bars: dict[str, pd.DataFrame]) -> pd.Timestamp | None:
@@ -35,11 +59,16 @@ def processing_cutoff(bars: dict[str, pd.DataFrame]) -> pd.Timestamp | None:
 
 
 def step(state: dict, bars: dict[str, pd.DataFrame], strategy, costs: dict,
-         cash_buffer: float, cutoff: pd.Timestamp) -> tuple[list, list]:
+         cash_buffer: float, cutoff: pd.Timestamp,
+         bench: pd.DataFrame | None = None) -> tuple[list, list]:
     """last_ts の次から cutoff までを処理。(約定リスト, 資産推移リスト) を返す。"""
     broker = PaperBroker(state["cash"], costs, state["positions"])
     pending: list[dict] = state["pending"]
     last_close: dict = state["last_close"]
+    costs_paid = float(state.get("costs_paid", 0.0))
+    bench_base = state.get("bench_base")
+    bench_last = state.get("bench_last")
+    start_cash = float(state["starting_cash"])
     symbols = list(bars.keys())
     signals = {s: strategy.signals(df) for s, df in bars.items() if not df.empty}
 
@@ -68,6 +97,7 @@ def step(state: dict, bars: dict[str, pd.DataFrame], strategy, costs: dict,
             else:
                 res = broker.sell(order["symbol"], order["qty"], ref)
             if res:
+                costs_paid += res["fee"] + res["slip"]
                 res.update({"ts": _iso(ts), "decided_at": order["decided_at"]})
                 fills.append(res)
         pending = still
@@ -76,6 +106,10 @@ def step(state: dict, bars: dict[str, pd.DataFrame], strategy, costs: dict,
         for s in here:
             last_close[s] = float(bars[s].at[ts, "close"])
         equity = broker.cash + sum(q * last_close.get(s, 0.0) for s, q in broker.positions.items())
+        if bench is not None and ts in bench.index:
+            bench_last = float(bench.at[ts, "close"])
+            if bench_base is None:
+                bench_base = bench_last
 
         # 3) この足の終値で判断して、次の足用の注文を作る
         reserved = sum(o["est_cost"] for o in pending if o["side"] == "BUY")
@@ -98,7 +132,9 @@ def step(state: dict, bars: dict[str, pd.DataFrame], strategy, costs: dict,
                 pending.append({"symbol": s, "side": "SELL", "qty": pos,
                                 "decided_at": _iso(ts), "est_cost": 0.0})
 
-        equity_points.append({"ts": _iso(ts), "equity": round(equity, 2), "cash": round(broker.cash, 2)})
+        bench_eq = start_cash * bench_last / bench_base if bench_base and bench_last else start_cash
+        equity_points.append({"ts": _iso(ts), "equity": round(equity, 2), "cash": round(broker.cash, 2),
+                              "gross": round(equity + costs_paid, 2), "bench": round(bench_eq, 2)})
 
     if timeline:
         state["last_ts"] = _iso(timeline[-1])
@@ -106,6 +142,9 @@ def step(state: dict, bars: dict[str, pd.DataFrame], strategy, costs: dict,
     state["positions"] = broker.positions
     state["pending"] = pending
     state["last_close"] = last_close
+    state["costs_paid"] = costs_paid
+    state["bench_base"] = bench_base
+    state["bench_last"] = bench_last
     return fills, equity_points
 
 

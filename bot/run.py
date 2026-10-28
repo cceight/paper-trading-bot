@@ -15,7 +15,7 @@ from pathlib import Path
 import pandas as pd
 
 from . import data as datamod
-from .engine import new_state, processing_cutoff, step
+from .engine import initialize, new_state, processing_cutoff, step
 from .strategy import build
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -49,8 +49,7 @@ def run_once(root: Path, conf: dict, provider, now: pd.Timestamp) -> dict:
     interval = int(conf["interval_minutes"])
 
     # 1) データ取得(失敗した銘柄があっても他は続ける)
-    bars = {}
-    for sym in conf["symbols"]:
+    def fetch(sym):
         old = datamod.load_bars(data_dir, sym)
         gap_days = 60 if old.empty else (now - old.index.max()).days + 1
         try:
@@ -59,7 +58,11 @@ def run_once(root: Path, conf: dict, provider, now: pd.Timestamp) -> dict:
             print(f"[warn] {sym} の取得に失敗: {e}")
             new = datamod.empty_frame()
         new = datamod.completed_only(new, interval, now.to_pydatetime())
-        bars[sym] = datamod.merge_and_save(data_dir, sym, old, new)
+        return datamod.merge_and_save(data_dir, sym, old, new)
+
+    bars = {sym: fetch(sym) for sym in conf["symbols"]}
+    bench_sym = conf.get("benchmark", "SPY")
+    bench = bars[bench_sym] if bench_sym in bars else fetch(bench_sym)
 
     # 2) 状態を読み込み、売買を進める
     state_path = state_dir / "state.json"
@@ -71,26 +74,44 @@ def run_once(root: Path, conf: dict, provider, now: pd.Timestamp) -> dict:
         print("データがまだありません")
         return state
 
+    strategy = build(conf["strategy"])
     if state["last_ts"] is None:
         # 初回は過去データで売買せず、今この瞬間からスタートする
-        state["last_ts"] = cutoff.strftime("%Y-%m-%dT%H:%M:%SZ")
-        state["started_at"] = state["last_ts"]
-        for s, df in bars.items():
-            if not df.empty:
-                state["last_close"][s] = float(df["close"].iloc[-1])
-        fills, points = [], [{"ts": state["last_ts"], "equity": state["cash"], "cash": state["cash"]}]
+        fills, points = [], [initialize(state, bars, bench, cutoff)]
         print(f"初回起動: {state['last_ts']} から運用開始")
     else:
-        strategy = build(conf["strategy"])
-        fills, points = step(state, bars, strategy, conf["costs"], float(conf["cash_buffer"]), cutoff)
+        if "costs_paid" not in state:
+            state = rebuild_history(root, conf, state, bars, bench, strategy)
+        fills, points = step(state, bars, strategy, conf["costs"], float(conf["cash_buffer"]),
+                             cutoff, bench)
 
     state["updated_at"] = now.strftime("%Y-%m-%dT%H:%M:%SZ")
     state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
-    append_csv(state_dir / "trades.csv", fills,
-               ["ts", "decided_at", "side", "symbol", "qty", "price", "fee"])
-    append_csv(state_dir / "equity.csv", points, ["ts", "equity", "cash"])
+    append_csv(state_dir / "trades.csv", fills, TRADE_FIELDS)
+    append_csv(state_dir / "equity.csv", points, EQUITY_FIELDS)
     write_report(root, conf, state)
     print(f"処理: 約定 {len(fills)} 件 / 足 {len(points)} 本 / 処理済み {state['last_ts']}")
+    return state
+
+
+TRADE_FIELDS = ["ts", "decided_at", "side", "symbol", "qty", "price", "fee"]
+EQUITY_FIELDS = ["ts", "equity", "cash", "gross", "bench"]
+
+
+def rebuild_history(root: Path, conf: dict, old: dict, bars, bench, strategy) -> dict:
+    """比較用の数値(gross / bench)が無い古い記録を、保存済みの5分足から最初から計算し直す。"""
+    state = new_state(float(old["starting_cash"]))
+    start = pd.Timestamp(old["started_at"])
+    first = initialize(state, bars, bench, start)
+    fills, points = step(state, bars, strategy, conf["costs"], float(conf["cash_buffer"]),
+                         pd.Timestamp(old["last_ts"]), bench)
+    old_trades = len(read_csv(root / "state" / "trades.csv"))
+    print(f"記録を作り直しました: 約定 {old_trades} 件 → {len(fills)} 件 / 足 {len(points)} 本")
+    for name, rows, fields in (("trades.csv", fills, TRADE_FIELDS),
+                               ("equity.csv", [first] + points, EQUITY_FIELDS)):
+        path = root / "state" / name
+        path.unlink(missing_ok=True)
+        append_csv(path, rows, fields)
     return state
 
 
@@ -119,7 +140,10 @@ def write_report(root: Path, conf: dict, state: dict):
     equity = read_csv(root / "state" / "equity.csv")
     trades = read_csv(root / "state" / "trades.csv")
 
-    last_equity = float(equity[-1]["equity"]) if equity else state["starting_cash"]
+    start = float(state["starting_cash"])
+    last = equity[-1] if equity else {}
+    last_equity = float(last.get("equity") or start)
+    last_bench = float(last.get("bench") or start)
     positions = []
     for s, q in sorted(state["positions"].items()):
         price = state["last_close"].get(s, 0.0)
@@ -135,6 +159,10 @@ def write_report(root: Path, conf: dict, state: dict):
         "return_pct": round((last_equity / state["starting_cash"] - 1) * 100, 3),
         "trade_count": len(trades),
         "fees_paid": round(sum(float(t["fee"]) for t in trades), 2),
+        "costs_paid": round(float(state.get("costs_paid", 0.0)), 2),
+        "benchmark": conf.get("benchmark", "SPY"),
+        "bench_equity": round(last_bench, 2),
+        "vs_bench": round(last_equity - last_bench, 2),
         "positions": positions,
         "pending": [{k: o[k] for k in ("symbol", "side", "qty", "decided_at")} for o in state["pending"]],
         "symbols": conf["symbols"],
@@ -142,7 +170,9 @@ def write_report(root: Path, conf: dict, state: dict):
     }
     (out / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=1), encoding="utf-8")
     (out / "equity.json").write_text(
-        json.dumps([[e["ts"], float(e["equity"])] for e in equity], separators=(",", ":")), encoding="utf-8")
+        json.dumps([[e["ts"], float(e["equity"]), float(e.get("gross") or e["equity"]),
+                     float(e.get("bench") or start)] for e in equity],
+                   separators=(",", ":")), encoding="utf-8")
     (out / "trades.json").write_text(json.dumps(trades[-300:], ensure_ascii=False, indent=0), encoding="utf-8")
 
 
@@ -153,9 +183,13 @@ def backtest(root: Path, conf: dict):
     if cutoff is None:
         print("データがありません")
         return
+    bench_sym = conf.get("benchmark", "SPY")
+    bench = bars.get(bench_sym)
+    if bench is None:
+        bench = datamod.load_bars(root / "data" / "bars", bench_sym)
     state = new_state(float(conf["starting_cash_usd"]))
     fills, points = step(state, bars, build(conf["strategy"]), conf["costs"],
-                         float(conf["cash_buffer"]), cutoff)
+                         float(conf["cash_buffer"]), cutoff, bench)
     if not points:
         print("処理できる足がありません")
         return
@@ -163,7 +197,8 @@ def backtest(root: Path, conf: dict):
     ret = (end["equity"] / state["starting_cash"] - 1) * 100
     print(f"期間: {start['ts']} 〜 {end['ts']} ({len(points)} 本)")
     print(f"資産: {state['starting_cash']:.2f} → {end['equity']:.2f} USD ({ret:+.2f}%)")
-    print(f"約定: {len(fills)} 件 / 手数料合計 {sum(f['fee'] for f in fills):.2f} USD")
+    print(f"コスト前: {end['gross']:.2f} USD / {bench_sym}放置: {end['bench']:.2f} USD")
+    print(f"約定: {len(fills)} 件 / 手数料+価格ズレ {state['costs_paid']:.2f} USD")
     return state, fills, points
 
 

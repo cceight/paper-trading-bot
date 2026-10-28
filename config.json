@@ -1,5 +1,6 @@
 {
   "symbols": ["SPY", "QQQ", "NVDA", "MSFT", "AMZN", "GOOGL"],
+  "benchmark": "SPY",
   "interval_minutes": 5,
   "starting_cash_usd": 10000,
   "strategy": {
