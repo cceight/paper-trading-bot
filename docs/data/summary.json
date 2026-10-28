@@ -1,26 +1,51 @@
 {
- "updated_at": "2026-10-28T18:36:31Z",
+ "updated_at": "2026-10-28T22:51:07Z",
  "started_at": "2026-10-26T19:55:00Z",
- "last_bar": "2026-10-28T18:30:00Z",
+ "last_bar": "2026-10-28T19:55:00Z",
  "starting_cash": 10000.0,
- "equity": 9950.48,
- "cash": 8654.24,
- "return_pct": -0.495,
- "trade_count": 27,
- "fees_paid": 27.0,
- "costs_paid": 47.61,
+ "equity": 9960.77,
+ "cash": 4084.28,
+ "return_pct": -0.392,
+ "trade_count": 34,
+ "fees_paid": 34.0,
+ "costs_paid": 59.73,
  "benchmark": "SPY",
- "bench_equity": 10079.78,
- "vs_bench": -129.3,
+ "bench_equity": 10093.11,
+ "vs_bench": -132.34,
  "positions": [
+  {
+   "symbol": "AMZN",
+   "qty": 6,
+   "price": 254.65,
+   "value": 1527.9
+  },
   {
    "symbol": "GOOGL",
    "qty": 4,
-   "price": 324.06,
-   "value": 1296.24
+   "price": 325.61,
+   "value": 1302.44
+  },
+  {
+   "symbol": "MSFT",
+   "qty": 3,
+   "price": 531.73,
+   "value": 1595.19
+  },
+  {
+   "symbol": "QQQ",
+   "qty": 2,
+   "price": 725.48,
+   "value": 1450.96
   }
  ],
- "pending": [],
+ "pending": [
+  {
+   "symbol": "SPY",
+   "side": "BUY",
+   "qty": 2,
+   "decided_at": "2026-10-28T19:55:00Z"
+  }
+ ],
  "symbols": [
   "SPY",
   "QQQ",
