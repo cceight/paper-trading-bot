@@ -1,23 +1,29 @@
 {
- "updated_at": "2026-11-06T19:47:23Z",
+ "updated_at": "2026-11-06T23:54:13Z",
  "started_at": "2026-10-26T19:55:00Z",
- "last_bar": "2026-11-06T19:40:00Z",
+ "last_bar": "2026-11-06T20:55:00Z",
  "starting_cash": 10000.0,
- "equity": 9611.38,
- "cash": 8293.94,
- "return_pct": -3.886,
- "trade_count": 105,
- "fees_paid": 105.0,
- "costs_paid": 181.06,
+ "equity": 9595.69,
+ "cash": 6789.81,
+ "return_pct": -4.043,
+ "trade_count": 106,
+ "fees_paid": 106.0,
+ "costs_paid": 182.81,
  "benchmark": "SPY",
- "bench_equity": 9642.79,
- "vs_bench": -31.41,
+ "bench_equity": 9609.46,
+ "vs_bench": -13.77,
  "positions": [
+  {
+   "symbol": "NVDA",
+   "qty": 8,
+   "price": 186.68,
+   "value": 1493.44
+  },
   {
    "symbol": "QQQ",
    "qty": 2,
-   "price": 658.72,
-   "value": 1317.44
+   "price": 656.22,
+   "value": 1312.44
   }
  ],
  "pending": [],
