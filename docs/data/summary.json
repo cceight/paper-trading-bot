@@ -1,31 +1,18 @@
 {
- "updated_at": "2026-11-11T19:56:57Z",
+ "updated_at": "2026-11-12T01:48:02Z",
  "started_at": "2026-10-26T19:55:00Z",
- "last_bar": "2026-11-11T19:50:00Z",
+ "last_bar": "2026-11-11T20:55:00Z",
  "starting_cash": 10000.0,
- "equity": 9534.18,
- "cash": 6539.7,
- "return_pct": -4.658,
- "trade_count": 136,
- "fees_paid": 136.0,
- "costs_paid": 233.11,
+ "equity": 9527.0,
+ "cash": 9527.0,
+ "return_pct": -4.73,
+ "trade_count": 138,
+ "fees_paid": 138.0,
+ "costs_paid": 236.6,
  "benchmark": "SPY",
- "bench_equity": 9942.04,
- "vs_bench": -407.86,
- "positions": [
-  {
-   "symbol": "GOOGL",
-   "qty": 5,
-   "price": 294.58,
-   "value": 1472.9
-  },
-  {
-   "symbol": "SPY",
-   "qty": 2,
-   "price": 760.79,
-   "value": 1521.58
-  }
- ],
+ "bench_equity": 9928.98,
+ "vs_bench": -401.98,
+ "positions": [],
  "pending": [],
  "symbols": [
   "SPY",
