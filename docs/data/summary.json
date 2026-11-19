@@ -1,37 +1,18 @@
 {
- "updated_at": "2026-11-19T02:32:12Z",
+ "updated_at": "2026-11-19T21:07:17Z",
  "started_at": "2026-10-26T19:55:00Z",
- "last_bar": "2026-11-18T20:55:00Z",
+ "last_bar": "2026-11-19T20:55:00Z",
  "starting_cash": 10000.0,
- "equity": 9240.71,
- "cash": 5474.0,
- "return_pct": -7.593,
- "trade_count": 193,
- "fees_paid": 193.0,
- "costs_paid": 329.14,
+ "equity": 9107.51,
+ "cash": 9107.51,
+ "return_pct": -8.925,
+ "trade_count": 202,
+ "fees_paid": 202.0,
+ "costs_paid": 344.2,
  "benchmark": "SPY",
- "bench_equity": 9543.93,
- "vs_bench": -303.22,
- "positions": [
-  {
-   "symbol": "AMZN",
-   "qty": 5,
-   "price": 267.67,
-   "value": 1338.35
-  },
-  {
-   "symbol": "GOOGL",
-   "qty": 5,
-   "price": 282.34,
-   "value": 1411.7
-  },
-  {
-   "symbol": "MSFT",
-   "qty": 2,
-   "price": 508.33,
-   "value": 1016.66
-  }
- ],
+ "bench_equity": 9354.24,
+ "vs_bench": -246.73,
+ "positions": [],
  "pending": [],
  "symbols": [
   "SPY",
