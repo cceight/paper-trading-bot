@@ -1,7 +1,7 @@
 {
- "updated_at": "2026-11-20T20:53:14Z",
+ "updated_at": "2026-11-21T01:54:47Z",
  "started_at": "2026-10-26T19:55:00Z",
- "last_bar": "2026-11-20T20:45:00Z",
+ "last_bar": "2026-11-20T20:55:00Z",
  "starting_cash": 10000.0,
  "equity": 9082.53,
  "cash": 9082.53,
@@ -10,8 +10,8 @@
  "fees_paid": 204.0,
  "costs_paid": 347.59,
  "benchmark": "SPY",
- "bench_equity": 9069.49,
- "vs_bench": 13.04,
+ "bench_equity": 9028.85,
+ "vs_bench": 53.68,
  "positions": [],
  "pending": [],
  "symbols": [
