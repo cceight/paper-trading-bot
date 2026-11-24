@@ -1,38 +1,26 @@
 {
- "updated_at": "2026-11-24T00:31:49Z",
+ "updated_at": "2026-11-24T22:52:10Z",
  "started_at": "2026-10-26T19:55:00Z",
- "last_bar": "2026-11-23T20:55:00Z",
+ "last_bar": "2026-11-24T20:55:00Z",
  "starting_cash": 10000.0,
- "equity": 9106.52,
- "cash": 5038.52,
- "return_pct": -8.935,
- "trade_count": 219,
- "fees_paid": 219.0,
- "costs_paid": 372.52,
+ "equity": 8945.48,
+ "cash": 8945.48,
+ "return_pct": -10.545,
+ "trade_count": 232,
+ "fees_paid": 232.0,
+ "costs_paid": 393.97,
  "benchmark": "SPY",
- "bench_equity": 9440.23,
- "vs_bench": -333.71,
- "positions": [
+ "bench_equity": 9393.19,
+ "vs_bench": -447.71,
+ "positions": [],
+ "pending": [
   {
    "symbol": "NVDA",
-   "qty": 8,
-   "price": 165.18,
-   "value": 1321.48
-  },
-  {
-   "symbol": "QQQ",
-   "qty": 2,
-   "price": 650.87,
-   "value": 1301.74
-  },
-  {
-   "symbol": "SPY",
-   "qty": 2,
-   "price": 722.39,
-   "value": 1444.78
+   "side": "BUY",
+   "qty": 9,
+   "decided_at": "2026-11-24T20:55:00Z"
   }
  ],
- "pending": [],
  "symbols": [
   "SPY",
   "QQQ",
